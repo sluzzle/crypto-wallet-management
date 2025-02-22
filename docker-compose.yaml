@@ -1,0 +1,33 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-container
+    environment:
+      MYSQL_DATABASE: crypto_wallet_management
+      MYSQL_ROOT_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    networks:
+      - mysql_network
+
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    container_name: wallet-management-app
+    ports:
+      - "8080:8080"
+    networks:
+      - mysql_network
+    depends_on:
+      - mysql
+
+volumes:
+  db_data:
+
+networks:
+  mysql_network:
+    driver: bridge
