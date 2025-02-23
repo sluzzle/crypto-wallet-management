@@ -66,8 +66,8 @@ class AssetRepositoryTest {
 
         List<String> symbols = assetRepository.findAllSymbolsByWallet(wallet);
 
-        assertThat(symbols).isNotEmpty();
-        assertThat(symbols).containsExactlyInAnyOrder("BTC", "ETH");
+        assertThat(symbols).isNotEmpty()
+               .containsExactlyInAnyOrder("BTC", "ETH");
     }
 
     @Test
@@ -92,8 +92,8 @@ class AssetRepositoryTest {
         String walletToken = "token";
 
         List<AssetEntity> assets = assetRepository.findAllByWalletToken(walletToken);
-        assertThat(assets).isNotEmpty();
-        assertThat(assets.size()).isEqualTo(2);
+        assertThat(assets).isNotEmpty()
+                .hasSize(2);
     }
 
     @Test

@@ -15,12 +15,18 @@ import java.util.Optional;
 @Repository
 public interface AssetRepository extends JpaRepository<AssetEntity, Long> {
     Optional<AssetEntity> findBySymbol(String symbol);
+
+    Optional<AssetEntity> findBySymbolAndWalletToken(String symbol, String token);
+
     @Query(value = "SELECT DISTINCT a.symbol FROM assets a", nativeQuery = true)
     List<String> findAllDistinctSymbols();
-    @Modifying
+
+    @Modifying(clearAutomatically=true, flushAutomatically=true)
     @Query(value = "UPDATE assets a SET a.price = :price WHERE a.symbol = :symbol", nativeQuery = true)
     int updatePriceBySymbol(@Param("symbol") String symbol, @Param("price") BigDecimal price);
+
     @Query(value = "SELECT a.symbol FROM assets a INNER JOIN wallets w ON a.wallet_id = w.id WHERE w.token = :token ", nativeQuery = true)
     List<String> findAllSymbolsByWallet(@Param("token") String walletToken);
+
     List<AssetEntity> findAllByWalletToken(String walletToken);
 }
