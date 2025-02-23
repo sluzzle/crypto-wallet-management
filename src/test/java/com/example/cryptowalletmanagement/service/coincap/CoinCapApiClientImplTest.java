@@ -34,40 +34,40 @@ class CoinCapApiClientImplTest {
     }
 
     @Test
-    void fetchCoinPrice_ShouldReturnCorrectPrice() throws CoinCapApiException {
+    void fetchAssetPrice_ShouldReturnCorrectPrice() throws CoinCapApiException {
         String symbol = "BTC";
 
-        BigDecimal price = coinCapApiClient.fetchCoinPrice(symbol);
+        BigDecimal price = coinCapApiClient.fetchAssetPrice(symbol);
 
         assertNotNull(price, "Price should not be null");
         assertTrue(price.compareTo(BigDecimal.ZERO) > 0, "Price should be greater than 0");
     }
 
     @Test
-    void fetchCoinPrice_ShouldReturnCorrectPriceByDate() throws CoinCapApiException {
+    void fetchAssetPrice_ShouldReturnCorrectPriceByDate() throws CoinCapApiException {
         String symbol = "BTC";
 
         LocalDate date = LocalDate.parse("01/02/2025", DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
 
-        BigDecimal price = coinCapApiClient.fetchCoinPrice(symbol, date);
+        BigDecimal price = coinCapApiClient.fetchAssetPrice(symbol, date);
 
         assertNotNull(price, "Price should not be null");
         assertTrue(price.compareTo(BigDecimal.ZERO) > 0, "Price should be greater than 0");
     }
 
     @Test
-    void fetchCoinPrice_ShouldThrowExceptionWhenDateIsInvalid() throws CoinCapApiException {
+    void fetchAssetPrice_ShouldThrowExceptionWhenDateIsInvalid() throws CoinCapApiException {
         String symbol = "BTC";
 
         LocalDate date = LocalDate.parse("01/02/2026", DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-       assertThrows(CoinCapApiException.class, () -> coinCapApiClient.fetchCoinPrice(symbol, date));
+       assertThrows(CoinCapApiException.class, () -> coinCapApiClient.fetchAssetPrice(symbol, date));
     }
 
     @Test
-    void fetchCoinPrice_ShouldThrowCoinCapApiExceptionOnUnknownSymbol() {
+    void fetchCoinPrice_ShouldThrowAssetCapApiExceptionOnUnknownSymbol() {
         String symbol = "unknown";
-        assertThrows(CoinCapApiException.class, () -> coinCapApiClient.fetchCoinPrice(symbol));
+        assertThrows(CoinCapApiException.class, () -> coinCapApiClient.fetchAssetPrice(symbol));
     }
 }

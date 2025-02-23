@@ -6,6 +6,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public interface CoinCapApiClient {
-    BigDecimal fetchCoinPrice(String symbol, LocalDate date) throws CoinCapApiException;
-    BigDecimal fetchCoinPrice(String symbol) throws CoinCapApiException;
+    BigDecimal fetchAssetPrice(String symbol, LocalDate date) throws CoinCapApiException;
+    BigDecimal fetchAssetPrice(String symbol) throws CoinCapApiException;
 }

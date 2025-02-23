@@ -11,9 +11,14 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
 
 import static com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationInputDTO.AssetInputDTO;
 
+/**
+ * Service for evauating the performance of a given assets in a crypto wallet
+ */
 @Service
 public class WalletEvaluationServiceImpl implements WalletEvaluationService {
 
@@ -37,30 +42,28 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
     @Override
     public WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
         BigDecimal totalValue = this.calculateTotal(walletEvaluationInput, date);
-        String bestAsset = "";
-        double bestPerformance = 0;
-        String worstAsset = "";
-        double worstPerformance =0;
 
-        for (AssetInputDTO asset : walletEvaluationInput.assets()) {
-            BigDecimal price = this.getCurrentPrice(asset.symbol(), date);
-            double performance = calculatePerformance(asset, price).doubleValue();
+        record AssetPerformance(String symbol, double performance){}
 
-            if (performance > bestPerformance) {
-                bestPerformance = performance;
-                bestAsset = asset.symbol();
-            }
+        List<AssetPerformance> performances = walletEvaluationInput.assets().stream()
+                .map(asset -> {
+                    BigDecimal pastPrice = this.getCurrentPrice(asset.symbol(), date);
+                    double performance = calculatePerformance(asset, pastPrice).doubleValue();
+                    return new AssetPerformance(asset.symbol(), performance);
+                }).toList();
 
-            if (performance < worstPerformance) {
-                worstPerformance = performance;
-                worstAsset = asset.symbol();
-            }
+        AssetPerformance bestAsset = performances.stream()
+                .max(Comparator.comparingDouble(AssetPerformance::performance))
+                .orElse(new AssetPerformance("", 0));
+        AssetPerformance worstAsset = performances.stream()
+                .min(Comparator.comparingDouble(AssetPerformance::performance))
+                .orElse(new AssetPerformance("", 0));
 
-        }
-        return new WalletEvaluationOutputDTO(totalValue, bestAsset, bestPerformance, worstAsset, worstPerformance);
+        return new WalletEvaluationOutputDTO(totalValue, bestAsset.symbol(), bestAsset.performance(), worstAsset.symbol(), worstAsset.performance());
     }
 
     /**
+     * calculates the performance of an asset as a percentage
      * @param asset
      * @param pastPrice
      * @return
@@ -78,7 +81,7 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
      * @return
      * @throws CoinCapApiException
      */
-    public BigDecimal calculateTotal(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
+    private BigDecimal calculateTotal(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
         return walletEvaluationInput.assets().stream()
                 .map(asset -> {
                     BigDecimal price = this.getCurrentPrice(asset.symbol(), date);
@@ -93,9 +96,9 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
      * @param symbol
      * @return
      */
-    public BigDecimal getCurrentPrice(String symbol, LocalDate date) {
+    private BigDecimal getCurrentPrice(String symbol, LocalDate date) {
         try {
-            BigDecimal price = coinCapApiClient.fetchCoinPrice(symbol, date);
+            BigDecimal price = coinCapApiClient.fetchAssetPrice(symbol, date);
             if (price == null) {
                 throw new WalletPerformanceException("Unable to fetch price for asset: " + symbol);
             }

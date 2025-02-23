@@ -45,7 +45,7 @@ public class AssetServiceImpl implements AssetService{
                 .orElseThrow(() -> new WalletException("Wallet not found for token : " + walletToken));
         BigDecimal assetPrice;
         try {
-            assetPrice = coinCapApiClient.fetchCoinPrice(symbol);
+            assetPrice = coinCapApiClient.fetchAssetPrice(symbol);
             if (assetPrice == null) {
                 throw new AssetException("Invalid price for asset : " + symbol);
             }

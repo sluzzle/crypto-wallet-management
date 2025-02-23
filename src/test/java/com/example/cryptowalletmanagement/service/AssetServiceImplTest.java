@@ -47,7 +47,7 @@ class AssetServiceImplTest {
         wallet.setId(1L);
 
         when(walletRepository.findWalletEntityByToken(walletToken)).thenReturn(Optional.of(wallet));
-        when(coinCapApiClient.fetchCoinPrice(symbol)).thenReturn(price);
+        when(coinCapApiClient.fetchAssetPrice(symbol)).thenReturn(price);
 
         AssetEntity savedAsset = new AssetEntity();
         savedAsset.setId(1L);

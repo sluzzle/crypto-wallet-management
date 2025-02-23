@@ -12,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,23 +40,23 @@ class WalletEvaluationServiceImplTest {
                 )
         );
 
-        LocalDate date = LocalDate.parse("01/10/2023");
+        LocalDate date = LocalDate.parse("03/01/2025", DateTimeFormatter.ofPattern("dd/MM/yyyy"));
 
-        when(coinCapApiClient.fetchCoinPrice("BTC")).thenReturn(BigDecimal.valueOf(94749.27));
-        when(coinCapApiClient.fetchCoinPrice("ETH")).thenReturn(BigDecimal.valueOf(3699.47));
+        when(coinCapApiClient.fetchAssetPrice("BTC", date)).thenReturn(BigDecimal.valueOf(94749.27));
+        when(coinCapApiClient.fetchAssetPrice("ETH", date)).thenReturn(BigDecimal.valueOf(3699.47));
 
-        double expectedTotal = 63097.33;
+        double expectedTotal = 63090.0;
         String expectedBestAsset = "BTC";
-        double expectedBestPerformance = 35.35;
+        double expectedBestPerformance = 35.36;
         String expectedWorstAsset = "ETH";
-        double expectedWorstPerformance = 2.7;
+        double expectedWorstPerformance = 2.677;
 
         WalletEvaluationOutputDTO result = walletEvaluationService.evaluateWallet(walletInput, date);
 
         assertEquals(expectedTotal, result.total().doubleValue(), 0.01);
-        assertEquals(expectedBestAsset, result.bestAsset(), "Best asset is incorrect");
-        assertEquals(expectedBestPerformance, result.bestPerformance(), "Best performance is incorrect");
-        assertEquals(expectedWorstAsset, result.worstAsset(), "Worst asset is incorrect");
-        assertEquals(expectedWorstPerformance, result.worstPerformance(), "Worst performance is incorrect");
+        assertEquals(expectedBestAsset, result.bestAsset());
+        assertEquals(expectedBestPerformance, result.bestPerformance());
+        assertEquals(expectedWorstAsset, result.worstAsset());
+        assertEquals(expectedWorstPerformance, result.worstPerformance());
     }
 }

@@ -34,18 +34,45 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
         this.coinCapApiProperties = coinCapApiProperties;
     }
 
+    /**
+     * fetches asset price by symbol
+     *
+     * @param symbol
+     * @return
+     */
     @Override
-    public BigDecimal fetchCoinPrice(String symbol) {
-        return fetchCoinPrice(symbol, null);
+    public BigDecimal fetchAssetPrice(String symbol) {
+        String url = String.format(coinCapApiProperties.getSearchQuery(), symbol);
+        return fetchAssetPrice(symbol, url);
     }
 
+    /**
+     * fetches asset price by symbol and date
+     *
+     * @param symbol
+     * @param date
+     * @return
+     */
     @Override
-    public BigDecimal fetchCoinPrice(String symbol, LocalDate date) {
-        String url = String.format(coinCapApiProperties.getSearchQuery(), symbol);
-        if (date != null) {
-            Long unixTime = this.convertDateToUnixTime(date);
-            url = String.format(coinCapApiProperties.getHistoryQuery(), fetchCoinId(symbol), unixTime, unixTime + 5000);
+    public BigDecimal fetchAssetPrice(String symbol, LocalDate date) {
+        if (date.isAfter(LocalDate.now()) || date.isBefore(LocalDate.of(2017, 1, 1))) {
+            throw new CoinCapApiException("invalid date range, min: 2017 and max: today");
         }
+        Long unixTime = this.convertDateToUnixTime(date);
+        String url = String.format(coinCapApiProperties.getHistoryQuery(), fetchAssetId(symbol), unixTime, unixTime + 5000);
+        return fetchAssetPrice(symbol, url);
+    }
+
+    /**
+     * retreives the price of the asset from the given url and returns the price
+     * if the asset exists
+     *
+     * @param symbol
+     * @param url
+     * @return price in BigDecimal
+     * @throws CoinCapApiException
+     */
+    private BigDecimal fetchAssetPrice(String symbol, String url) {
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             if (!response.getStatusCode().is2xxSuccessful()) {
@@ -63,12 +90,13 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
         }
     }
 
+
     /**
      * @param symbol
      * @return
      * @throws CoinCapApiException
      */
-    private String fetchCoinId(String symbol) throws CoinCapApiException {
+    private String fetchAssetId(String symbol) throws CoinCapApiException {
         ResponseEntity<String> response = restTemplate.getForEntity(String.format(coinCapApiProperties.getSearchQuery(), symbol), String.class);
         if (!response.getStatusCode().is2xxSuccessful()) {
             throw new CoinCapApiException("unable to fetch price from coincap for : " + symbol);
@@ -100,11 +128,10 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
     }
 
     /**
-     *
      * @param date
      * @return
      */
-    private Long convertDateToUnixTime(LocalDate date){
+    private Long convertDateToUnixTime(LocalDate date) {
         return date.atStartOfDay(ZoneId.of("UTC")).toInstant()
                 .toEpochMilli();
     }
