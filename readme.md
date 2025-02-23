@@ -14,8 +14,9 @@ cd crypto-wallet-management
 mvn clean install
 ```
 #### Start the application
+runs on a docker container on ports 8080 for the application and 3306 for mysql
 ``` bash
-mvn spring-boot:run
+docker-compose up --build
 ```
 
 The application will start on `http://localhost:8080` , Once the application is running, visit the link in the browser:
