@@ -30,7 +30,6 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
         precision = new MathContext(4, RoundingMode.HALF_UP);
     }
 
-
     /**
      * calculates the wallet performance of given assets
      *
@@ -43,7 +42,8 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
     public WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
         BigDecimal totalValue = this.calculateTotal(walletEvaluationInput, date);
 
-        record AssetPerformance(String symbol, double performance){}
+        record AssetPerformance(String symbol, double performance) {
+        }
 
         List<AssetPerformance> performances = walletEvaluationInput.assets().stream()
                 .map(asset -> {
@@ -64,6 +64,7 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
 
     /**
      * calculates the performance of an asset as a percentage
+     *
      * @param asset
      * @param pastPrice
      * @return
@@ -97,15 +98,11 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
      * @return
      */
     private BigDecimal getCurrentPrice(String symbol, LocalDate date) {
-        try {
-            BigDecimal price = coinCapApiClient.fetchAssetPrice(symbol, date);
-            if (price == null) {
-                throw new WalletPerformanceException("Unable to fetch price for asset: " + symbol);
-            }
-            return price;
-        } catch (CoinCapApiException e) {
+        BigDecimal price = coinCapApiClient.fetchAssetPrice(symbol, date);
+        if (price == null) {
             throw new WalletPerformanceException("Unable to fetch price for asset: " + symbol);
         }
+        return price;
     }
 
 }
