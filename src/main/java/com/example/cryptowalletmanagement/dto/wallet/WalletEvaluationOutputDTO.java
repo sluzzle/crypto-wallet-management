@@ -1,4 +1,6 @@
 package com.example.cryptowalletmanagement.dto.wallet;
 
-public record WalletEvaluationOutputDTO (java.math.BigDecimal total, String bestAsset, Double bestPerformance, String worstAsset, Double worstPerformance) {}
+import java.math.BigDecimal;
+
+public record WalletEvaluationOutputDTO (BigDecimal total, String bestAsset, double bestPerformance, String worstAsset, double worstPerformance) {}
 

@@ -1,5 +1,6 @@
 package com.example.cryptowalletmanagement.controller;
 
+import com.example.cryptowalletmanagement.dto.asset.AssetDTO;
 import com.example.cryptowalletmanagement.dto.wallet.WalletDTO;
 import com.example.cryptowalletmanagement.exception.ControllerExceptionHandler;
 import com.example.cryptowalletmanagement.exception.WalletException;
@@ -15,12 +16,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class WalletControllerTest {
 
@@ -70,5 +76,33 @@ class WalletControllerTest {
                 .andDo(print())
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(expectedError));
+    }
+
+    @Test
+    void getWallet_ShouldReturnWalletView() throws Exception {
+        WalletDTO wallet = new WalletDTO(1L, "test@example.com", "token");
+        when(walletService.getWalletByToken(wallet.token())).thenReturn(wallet);
+
+        AssetDTO asset1 = new AssetDTO(1L,wallet,"BTC", BigDecimal.valueOf(10000), BigDecimal.valueOf(0.1));
+        AssetDTO asset2 = new AssetDTO(2L,wallet,"ETH", BigDecimal.valueOf(2000), BigDecimal.valueOf(0.5));
+        List<AssetDTO> mockAssets = Arrays.asList(asset1, asset2);
+        when(assetService.getAllAssets(wallet.token())).thenReturn(mockAssets);
+
+        BigDecimal totalValue = mockAssets.stream()
+                .map(asset -> asset.price().multiply(asset.quantity()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        mockMvc.perform(get("/api/wallet/{token}", wallet.token())
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(wallet.id()))
+                .andExpect(jsonPath("$.total").value(totalValue.doubleValue()))
+                .andExpect(jsonPath("$.assets[0].symbol").value(asset1.symbol()))
+                .andExpect(jsonPath("$.assets[0].price").value(asset1.price().doubleValue()))
+                .andExpect(jsonPath("$.assets[0].quantity").value(asset1.quantity().doubleValue()))
+                .andExpect(jsonPath("$.assets[1].symbol").value(asset2.symbol()))
+                .andExpect(jsonPath("$.assets[1].price").value(asset2.price().doubleValue()))
+                .andExpect(jsonPath("$.assets[1].quantity").value(asset2.quantity().doubleValue()));
+
     }
 }

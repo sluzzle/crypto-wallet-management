@@ -6,6 +6,6 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface AssetService {
-    AssetDTO saveAsset(String walletId, String symbol, BigDecimal quantity, BigDecimal price);
+    AssetDTO saveAsset(String walletId, String symbol, BigDecimal quantity);
     List<AssetDTO> getAllAssets(String walletId);
 }

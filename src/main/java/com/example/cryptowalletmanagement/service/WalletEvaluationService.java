@@ -4,6 +4,8 @@ import com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationInputDTO;
 import com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationOutputDTO;
 import com.example.cryptowalletmanagement.exception.CoinCapApiException;
 
+import java.time.LocalDate;
+
 public interface WalletEvaluationService {
-    WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, String date) throws CoinCapApiException;
+    WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) throws CoinCapApiException;
 }

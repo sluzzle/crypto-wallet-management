@@ -12,6 +12,8 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -39,6 +41,28 @@ class CoinCapApiClientImplTest {
 
         assertNotNull(price, "Price should not be null");
         assertTrue(price.compareTo(BigDecimal.ZERO) > 0, "Price should be greater than 0");
+    }
+
+    @Test
+    void fetchCoinPrice_ShouldReturnCorrectPriceByDate() throws CoinCapApiException {
+        String symbol = "BTC";
+
+        LocalDate date = LocalDate.parse("01/02/2025", DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+
+        BigDecimal price = coinCapApiClient.fetchCoinPrice(symbol, date);
+
+        assertNotNull(price, "Price should not be null");
+        assertTrue(price.compareTo(BigDecimal.ZERO) > 0, "Price should be greater than 0");
+    }
+
+    @Test
+    void fetchCoinPrice_ShouldThrowExceptionWhenDateIsInvalid() throws CoinCapApiException {
+        String symbol = "BTC";
+
+        LocalDate date = LocalDate.parse("01/02/2026", DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+       assertThrows(CoinCapApiException.class, () -> coinCapApiClient.fetchCoinPrice(symbol, date));
     }
 
     @Test

@@ -6,8 +6,8 @@ import com.example.cryptowalletmanagement.repository.entities.WalletEntity;
 import com.example.cryptowalletmanagement.repository.interfaces.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;

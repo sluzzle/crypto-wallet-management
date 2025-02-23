@@ -1,8 +1,7 @@
 package com.example.cryptowalletmanagement.repository.interfaces;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.example.cryptowalletmanagement.repository.entities.AssetEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

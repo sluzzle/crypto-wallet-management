@@ -3,43 +3,48 @@ package com.example.cryptowalletmanagement.service;
 import com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationInputDTO;
 import com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationOutputDTO;
 import com.example.cryptowalletmanagement.exception.CoinCapApiException;
+import com.example.cryptowalletmanagement.exception.WalletPerformanceException;
 import com.example.cryptowalletmanagement.service.coincap.CoinCapApiClient;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 
-/**
- * Service that evaluates a wallet evolution today or in a specific date in the past
- */
+import static com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationInputDTO.AssetInputDTO;
+
 @Service
 public class WalletEvaluationServiceImpl implements WalletEvaluationService {
 
     private final CoinCapApiClient coinCapApiClient;
+    private final MathContext precision;
 
     public WalletEvaluationServiceImpl(CoinCapApiClient coinCapApiClient) {
         this.coinCapApiClient = coinCapApiClient;
+        precision = new MathContext(4, RoundingMode.HALF_UP);
     }
 
+
     /**
-     * Evaluates a given wallet by the given date
+     * calculates the wallet performance of given assets
+     *
      * @param walletEvaluationInput
      * @param date
-     * @return WalletEvaluationOutputDTO object
+     * @return
+     * @throws CoinCapApiException
      */
     @Override
-    public WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, String date) throws CoinCapApiException {
-        BigDecimal totalValue = new BigDecimal(0);
-        String bestAsset = null;
+    public WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
+        BigDecimal totalValue = this.calculateTotal(walletEvaluationInput, date);
+        String bestAsset = "";
         double bestPerformance = 0;
-        String worstAsset = null;
+        String worstAsset = "";
         double worstPerformance =0;
 
-        for (WalletEvaluationInputDTO.AssetInputDTO asset : walletEvaluationInput.assets()) {
-            BigDecimal pastPrice = coinCapApiClient.fetchCoinPrice(asset.symbol(), date);
-            double performance = calculatePerformance(asset, pastPrice).doubleValue();
-
-            totalValue = totalValue.add(pastPrice.multiply(BigDecimal.valueOf(asset.quantity())));
+        for (AssetInputDTO asset : walletEvaluationInput.assets()) {
+            BigDecimal price = this.getCurrentPrice(asset.symbol(), date);
+            double performance = calculatePerformance(asset, price).doubleValue();
 
             if (performance > bestPerformance) {
                 bestPerformance = performance;
@@ -50,20 +55,54 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
                 worstPerformance = performance;
                 worstAsset = asset.symbol();
             }
-        }
 
+        }
         return new WalletEvaluationOutputDTO(totalValue, bestAsset, bestPerformance, worstAsset, worstPerformance);
     }
 
     /**
-     * Calculates the performance of an asset
      * @param asset
      * @param pastPrice
-     * @return A BigDecimal
+     * @return
      */
-    private BigDecimal calculatePerformance(WalletEvaluationInputDTO.AssetInputDTO asset, BigDecimal pastPrice) {
-        BigDecimal currentPrice = BigDecimal.valueOf(asset.value() / asset.quantity());
-        return (currentPrice.subtract(pastPrice)).divide(pastPrice, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+    private BigDecimal calculatePerformance(AssetInputDTO asset, BigDecimal pastPrice) {
+        BigDecimal assetPrice = asset.value().divide(asset.quantity(), precision);
+        return (pastPrice.subtract(assetPrice)).divide(assetPrice, precision).multiply(BigDecimal.valueOf(100));
+    }
+
+    /**
+     * calculates the total of a given assets
+     *
+     * @param walletEvaluationInput
+     * @param date
+     * @return
+     * @throws CoinCapApiException
+     */
+    public BigDecimal calculateTotal(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
+        return walletEvaluationInput.assets().stream()
+                .map(asset -> {
+                    BigDecimal price = this.getCurrentPrice(asset.symbol(), date);
+                    return price.multiply(asset.quantity(), precision);
+                })
+                .reduce(BigDecimal::add).orElseThrow(() -> new WalletPerformanceException("unable to calculate total value"));
+    }
+
+    /**
+     * fetches the price of an asset from the coincap api
+     *
+     * @param symbol
+     * @return
+     */
+    public BigDecimal getCurrentPrice(String symbol, LocalDate date) {
+        try {
+            BigDecimal price = coinCapApiClient.fetchCoinPrice(symbol, date);
+            if (price == null) {
+                throw new WalletPerformanceException("Unable to fetch price for asset: " + symbol);
+            }
+            return price;
+        } catch (CoinCapApiException e) {
+            throw new WalletPerformanceException("Unable to fetch price for asset: " + symbol);
+        }
     }
 
 }

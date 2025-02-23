@@ -10,13 +10,15 @@ import com.example.cryptowalletmanagement.exception.CoinCapApiException;
 import com.example.cryptowalletmanagement.exception.WalletException;
 import com.example.cryptowalletmanagement.service.AssetService;
 import com.example.cryptowalletmanagement.service.WalletEvaluationService;
+import com.example.cryptowalletmanagement.service.WalletService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Email;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.example.cryptowalletmanagement.service.WalletService;
-
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -38,7 +40,7 @@ public class WalletController {
     }
 
     @PostMapping
-    public ResponseEntity<WalletView> createWallet(@RequestBody String email) {
+    public ResponseEntity<WalletView> createWallet(@Email @RequestBody String email) {
         return ResponseEntity.ok(WalletView
                 .fromWalletDTO(walletService.createWallet(email))
         );
@@ -72,7 +74,7 @@ public class WalletController {
     @PostMapping("/evaluate")
     public ResponseEntity<WalletEvaluationOutputDTO> evaluateWallet(
             @RequestBody WalletEvaluationInputDTO inputDTO,
-            @RequestParam(required = false, defaultValue = "m1") String date) throws CoinCapApiException {
+            @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate date) {
         WalletEvaluationOutputDTO result = walletEvaluationService.evaluateWallet(inputDTO, date);
         return ResponseEntity.ok(result);
     }

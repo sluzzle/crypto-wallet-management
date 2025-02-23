@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service implementation for managing crypto wallet assets
@@ -36,27 +37,35 @@ public class AssetServiceImpl implements AssetService{
      * @param walletToken
      * @param symbol (BTC, ETH...)
      * @param quantity
-     * @param price
      * @return An AssetDTO
      * @throws WalletException*/
     @Override
-    public AssetDTO saveAsset(String walletToken, String symbol, BigDecimal quantity, BigDecimal price) {
+    public AssetDTO saveAsset(String walletToken, String symbol, BigDecimal quantity) {
         WalletEntity wallet = walletRepository.findWalletEntityByToken(walletToken)
                 .orElseThrow(() -> new WalletException("Wallet not found for token : " + walletToken));
+        BigDecimal assetPrice;
         try {
-            BigDecimal tokenPrice = coinCapApiClient.fetchCoinPrice(symbol);
-            if (tokenPrice == null || tokenPrice.compareTo(price) != 0) {
+            assetPrice = coinCapApiClient.fetchCoinPrice(symbol);
+            if (assetPrice == null) {
                 throw new AssetException("Invalid price for asset : " + symbol);
             }
         } catch (CoinCapApiException e) {
             throw new AssetException("Unable to fetch price for asset : " + symbol);
         }
-        AssetEntity asset = new AssetEntity();
-        asset.setWallet(wallet);
-        asset.setSymbol(symbol);
-        asset.setQuantity(quantity);
-        asset.setPrice(price);
-        return AssetDTO.fromAssetEntity(assetRepository.save(asset));
+
+        Optional<AssetEntity> existingAsset = assetRepository.findBySymbolAndWalletToken(symbol, wallet.getToken());
+
+        if (existingAsset.isPresent()) {
+            existingAsset.get().setQuantity(existingAsset.get().getQuantity().add(quantity));
+            return AssetDTO.fromAssetEntity(assetRepository.save(existingAsset.get()));
+        } else {
+            AssetEntity asset = new AssetEntity();
+            asset.setWallet(wallet);
+            asset.setSymbol(symbol);
+            asset.setQuantity(quantity);
+            asset.setPrice(assetPrice);
+            return AssetDTO.fromAssetEntity(assetRepository.save(asset));
+        }
     }
 
     /**

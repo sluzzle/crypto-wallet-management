@@ -8,8 +8,12 @@ import com.example.cryptowalletmanagement.exception.CoinCapApiException;
 import com.example.cryptowalletmanagement.exception.WalletException;
 import com.example.cryptowalletmanagement.service.AssetService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Controller class for managing crypto assets.
@@ -34,8 +38,8 @@ public class AssetController {
      */
     @PostMapping
     public ResponseEntity<AssetView> addAsset(
-            @RequestBody AssetAddRequest asset) {
-        AssetDTO assetDTO = assetService.saveAsset(asset.walletToken(), asset.symbol(), asset.quantity(), asset.price());
+             @Valid @RequestBody AssetAddRequest asset) {
+        AssetDTO assetDTO = assetService.saveAsset(asset.walletToken(), asset.symbol(), asset.quantity());
         return ResponseEntity.ok(AssetView.fromAssetDTO(assetDTO));
     }
 }

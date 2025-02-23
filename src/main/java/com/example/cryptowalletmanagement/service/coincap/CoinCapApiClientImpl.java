@@ -10,12 +10,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 
 /**
  * Interface for interacting with CoinCapAPI
@@ -34,33 +35,78 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
     }
 
     @Override
-    public BigDecimal fetchCoinPrice(String symbol) throws CoinCapApiException {
+    public BigDecimal fetchCoinPrice(String symbol) {
+        return fetchCoinPrice(symbol, null);
+    }
+
+    @Override
+    public BigDecimal fetchCoinPrice(String symbol, LocalDate date) {
+        String url = String.format(coinCapApiProperties.getSearchQuery(), symbol);
+        if (date != null) {
+            Long unixTime = this.convertDateToUnixTime(date);
+            url = String.format(coinCapApiProperties.getHistoryQuery(), fetchCoinId(symbol), unixTime, unixTime + 5000);
+        }
         try {
-            ResponseEntity<String> response = restTemplate.getForEntity(String.format(coinCapApiProperties.getSearchQuery(), symbol), String.class);
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new CoinCapApiException("unexpected api response for asset: " + symbol);
             }
-            String jsonBody = response.getBody();
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(jsonBody);
-            JsonNode priceNode = root.path("data").get(0).get("priceUsd");
-            if (!priceNode.isNull()) {
-                return BigDecimal.valueOf(priceNode.asDouble());
+            JsonNode jsonNode = parseJsonResponse(response);
+            if (jsonNode != null && !jsonNode.isEmpty()) {
+                return BigDecimal.valueOf(jsonNode.get("priceUsd").asDouble());
             } else {
                 logger.error("unable to find price for: {}", symbol);
                 throw new CoinCapApiException("unable to find price for: " + symbol);
             }
-
-        } catch (RuntimeException | JsonProcessingException  e) {
-            throw new CoinCapApiException("Error parsing coin price response for symbol: " + symbol);
+        } catch (HttpClientErrorException | HttpServerErrorException e) {
+            throw new CoinCapApiException("unexpected api response for asset: " + symbol, e);
         }
     }
 
-    @Override
-    public BigDecimal fetchCoinPrice(String symbol, String date) throws CoinCapApiException {
-        LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
-        long startTimestamp = localDate.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli();
-        return null;
+    /**
+     * @param symbol
+     * @return
+     * @throws CoinCapApiException
+     */
+    private String fetchCoinId(String symbol) throws CoinCapApiException {
+        ResponseEntity<String> response = restTemplate.getForEntity(String.format(coinCapApiProperties.getSearchQuery(), symbol), String.class);
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new CoinCapApiException("unable to fetch price from coincap for : " + symbol);
+        }
+        JsonNode idNode = parseJsonResponse(response);
+        if (idNode == null || idNode.isEmpty()) {
+            throw new CoinCapApiException("unable to find coin id for: " + symbol);
+        }
+        return idNode.get("id").asText();
+    }
+
+    /**
+     * @param response
+     * @return
+     */
+    private JsonNode parseJsonResponse(ResponseEntity<String> response) {
+        try {
+            String jsonBody = response.getBody();
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode jsonNode = objectMapper.readTree(jsonBody);
+            if (jsonNode.has("data") && !jsonNode.path("data").isEmpty()) {
+                return jsonNode.path("data").get(0);
+            } else {
+                return null;
+            }
+        } catch (RuntimeException | JsonProcessingException e) {
+            throw new CoinCapApiException("Error parsing coin price response", e);
+        }
+    }
+
+    /**
+     *
+     * @param date
+     * @return
+     */
+    private Long convertDateToUnixTime(LocalDate date){
+        return date.atStartOfDay(ZoneId.of("UTC")).toInstant()
+                .toEpochMilli();
     }
 
 }
