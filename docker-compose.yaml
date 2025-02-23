@@ -5,6 +5,8 @@ services:
     environment:
       MYSQL_DATABASE: crypto_wallet_management
       MYSQL_ROOT_PASSWORD: password
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: password
     ports:
       - "3306:3306"
     volumes:
