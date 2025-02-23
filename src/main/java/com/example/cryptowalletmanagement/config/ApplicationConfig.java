@@ -6,11 +6,9 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
-import java.util.Locale;
+import java.time.Duration;
 
 @Configuration
 @EnableConfigurationProperties(CoinCapApiProperties.class)
@@ -23,17 +21,13 @@ public class ApplicationConfig {
     }
 
     @Bean
-    public LocaleResolver localeResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.US);
-        return localeResolver;
-    }
-
-    @Bean
     public RestTemplate coinCapRestTemplate() {
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(coinCapApiProperties.getBaseUrl());
-        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.NONE);
-        return new RestTemplateBuilder().uriTemplateHandler(factory).build();
+        factory.setEncodingMode(DefaultUriBuilderFactory.EncodingMode.NONE); //prevents enconding characters or spaces in the url
+        return new RestTemplateBuilder()
+                .uriTemplateHandler(factory)
+                .connectTimeout(Duration.ofMillis(coinCapApiProperties.getConnectTimeout()))
+                .build();
     }
 
 }

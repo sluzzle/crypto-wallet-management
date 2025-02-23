@@ -15,10 +15,12 @@ public class CoinCapApiProperties {
     private final String baseUrl;
     private final String searchQuery;
     private final String historyQuery;
+    private final long connectTimeout;
 
-    public CoinCapApiProperties(String baseUrl, String searchQuery, String historyQuery) {
+    public CoinCapApiProperties(String baseUrl, String searchQuery, String historyQuery, long connectTimeout) {
         this.baseUrl = baseUrl;
         this.searchQuery = searchQuery;
         this.historyQuery = historyQuery;
+        this.connectTimeout = connectTimeout;
     }
 }
