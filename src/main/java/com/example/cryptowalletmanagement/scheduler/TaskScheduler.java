@@ -14,9 +14,9 @@ public class TaskScheduler {
 
     private static final Logger logger = LoggerFactory.getLogger(TaskScheduler.class);
 
-    private final SchedulingTask schedulingTask;
+    private final SchedulingTask<?> schedulingTask;
 
-    public TaskScheduler(SchedulingTask schedulingTask) {
+    public TaskScheduler(SchedulingTask<?> schedulingTask) {
         this.schedulingTask = schedulingTask;
     }
 
@@ -28,7 +28,6 @@ public class TaskScheduler {
             schedulingTask.execute();
         } catch (RuntimeException e) {
             logger.error("Error during price update scheduler execution.", e);
-            throw e;
         }
     }
 }

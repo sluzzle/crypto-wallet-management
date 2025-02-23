@@ -9,15 +9,15 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
 
 /**
  * a Task to update the price of an asset
  */
 @Component
-public class PriceUpdateTask implements SchedulingTask {
+public class PriceUpdateTask implements SchedulingTask<List<CompletableFuture<Void>>> {
     private static final Logger logger = LoggerFactory.getLogger(PriceUpdateTask.class);
 
     private static final int MAX_THREADS = 3;
@@ -39,38 +39,30 @@ public class PriceUpdateTask implements SchedulingTask {
      * fetchs the latest price from the coincap api and updated the price of the asset
      */
     @Override
-    public void execute() {
+    public List<CompletableFuture<Void>> execute() {
         List<String> assetSymbols = assetRepository.findAllDistinctSymbols();
 
         if (assetSymbols.isEmpty()) {
             logger.warn("No asset found to update price for");
-            return;
+            return List.of();
         }
 
-        for (String symbol : assetSymbols) {
-            try {
-                executorService.submit(() -> {
+        return assetSymbols.stream()
+                .map(symbol -> CompletableFuture.runAsync(() -> {
                     logger.info("Fetching latest price for token: {}", symbol);
-
-                    BigDecimal latestPrice;
                     try {
-                        latestPrice = coinCapApiClient.fetchCoinPrice(symbol);
+                        BigDecimal latestPrice = coinCapApiClient.fetchAssetPrice(symbol);
+
+                        if (latestPrice != null) {
+                            assetRepository.updatePriceBySymbol(symbol, latestPrice);
+                            logger.info("Successfully updated price for token: {}", symbol);
+                        } else {
+                            logger.warn("Unable to find price for asset: {}", symbol);
+                        }
                     } catch (CoinCapApiException e) {
                         logger.error("Error fetching price for asset: {}", symbol, e);
-                        return;
                     }
-
-                    if (latestPrice != null) {
-                        assetRepository.updatePriceBySymbol(symbol, latestPrice);
-                        logger.info("Successfully updated price for token: {}", symbol);
-                    } else {
-                        logger.warn("Unable to find price for asset: {}", symbol);
-                    }
-                });
-            } catch (RejectedExecutionException e) {
-                logger.error("Task execution failed for asset: {}", symbol, e);
-            }
-        }
+                }, executorService))
+                .toList();
     }
-
 }

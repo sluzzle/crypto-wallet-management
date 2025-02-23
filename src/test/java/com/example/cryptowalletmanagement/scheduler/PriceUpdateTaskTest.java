@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.mockito.Mockito.*;
 
@@ -51,14 +52,14 @@ class PriceUpdateTaskTest {
         List<String> symbols = Arrays.asList("BTC", "ETH");
 
         when(assetRepository.findAllDistinctSymbols()).thenReturn(symbols);
-        when(coinCapApiClient.fetchCoinPrice("BTC")).thenReturn(BigDecimal.valueOf(50000.0));
-        when(coinCapApiClient.fetchCoinPrice("ETH")).thenReturn(BigDecimal.valueOf(4000.0));
+        when(coinCapApiClient.fetchAssetPrice("BTC")).thenReturn(BigDecimal.valueOf(50000.0));
+        when(coinCapApiClient.fetchAssetPrice("ETH")).thenReturn(BigDecimal.valueOf(4000.0));
 
         priceUpdateTask.execute();
 
         verify(assetRepository, times(1)).findAllDistinctSymbols();
-        verify(coinCapApiClient, times(1)).fetchCoinPrice("BTC");
-        verify(coinCapApiClient, times(1)).fetchCoinPrice("ETH");
+        verify(coinCapApiClient, times(1)).fetchAssetPrice("BTC");
+        verify(coinCapApiClient, times(1)).fetchAssetPrice("ETH");
         verify(assetRepository, times(1)).updatePriceBySymbol("BTC", BigDecimal.valueOf(50000.0));
         verify(assetRepository, times(1)).updatePriceBySymbol("ETH", BigDecimal.valueOf(4000.0));
     }
@@ -68,14 +69,17 @@ class PriceUpdateTaskTest {
         List<String> symbols = Arrays.asList("BTC", "ETH");
 
         when(assetRepository.findAllDistinctSymbols()).thenReturn(symbols);
-        when(coinCapApiClient.fetchCoinPrice("BTC")).thenReturn(BigDecimal.valueOf(50000.0));
-        when(coinCapApiClient.fetchCoinPrice("ETH")).thenReturn(null); // Simulate null price for ETH
+        when(coinCapApiClient.fetchAssetPrice("BTC")).thenReturn(BigDecimal.valueOf(50000.0));
+        when(coinCapApiClient.fetchAssetPrice("ETH")).thenReturn(null); // Simulate null price for ETH
 
-        priceUpdateTask.execute();
+       List<CompletableFuture<Void>> executions = priceUpdateTask.execute();
+
+       //wait for all of compltable features to finish
+        CompletableFuture.allOf(executions.toArray(new CompletableFuture[0])).join();
 
         verify(assetRepository, times(1)).findAllDistinctSymbols();
-        verify(coinCapApiClient, times(1)).fetchCoinPrice("BTC");
-        verify(coinCapApiClient, times(1)).fetchCoinPrice("ETH");
+        verify(coinCapApiClient, times(1)).fetchAssetPrice("BTC");
+        verify(coinCapApiClient, times(1)).fetchAssetPrice("ETH");
 
         verify(assetRepository, times(1)).updatePriceBySymbol("BTC", BigDecimal.valueOf(50000.0));
         verify(assetRepository, times(0)).updatePriceBySymbol(eq("ETH"), any());
