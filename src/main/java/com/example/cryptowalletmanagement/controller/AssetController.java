@@ -7,6 +7,7 @@ import com.example.cryptowalletmanagement.exception.AssetException;
 import com.example.cryptowalletmanagement.exception.CoinCapApiException;
 import com.example.cryptowalletmanagement.exception.WalletException;
 import com.example.cryptowalletmanagement.service.AssetService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,7 @@ public class AssetController {
      * @throws CoinCapApiException
      */
     @PostMapping
+    @Operation(summary = "Add a crypto asset to a wallet")
     public ResponseEntity<AssetView> addAsset(
              @Valid @RequestBody AssetAddRequest asset) {
         AssetDTO assetDTO = assetService.saveAsset(asset.walletToken(), asset.symbol(), asset.quantity());

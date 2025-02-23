@@ -11,6 +11,7 @@ import com.example.cryptowalletmanagement.exception.WalletException;
 import com.example.cryptowalletmanagement.service.AssetService;
 import com.example.cryptowalletmanagement.service.WalletEvaluationService;
 import com.example.cryptowalletmanagement.service.WalletService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Email;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -40,7 +41,8 @@ public class WalletController {
     }
 
     @PostMapping
-    public ResponseEntity<WalletView> createWallet(@Email @RequestBody String email) {
+    @Operation(summary = "Create a new wallet")
+    public ResponseEntity<WalletView> createWallet(@Email @RequestParam String email) {
         return ResponseEntity.ok(WalletView
                 .fromWalletDTO(walletService.createWallet(email))
         );
@@ -54,6 +56,7 @@ public class WalletController {
      * @throws WalletException
      */
     @GetMapping("/{token}")
+    @Operation(summary = "Retreive wallet detail")
     public ResponseEntity<WalletDetailDTO> getWallet(@PathVariable String token) {
         List<AssetDTO> assets = assetService.getAllAssets(token);
         WalletDTO wallet = walletService.getWalletByToken(token);
@@ -72,6 +75,7 @@ public class WalletController {
      * @throws CoinCapApiException
      */
     @PostMapping("/evaluate")
+    @Operation(summary = "Evaluate a given wallet")
     public ResponseEntity<WalletEvaluationOutputDTO> evaluateWallet(
             @RequestBody WalletEvaluationInputDTO inputDTO,
             @RequestParam @DateTimeFormat(pattern = "dd/MM/yyyy") LocalDate date) {
