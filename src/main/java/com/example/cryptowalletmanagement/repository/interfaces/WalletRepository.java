@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
     Optional<WalletEntity> findWalletEntityByEmail(String email);
-    Optional<WalletEntity> findWalletEntityByToken(String token);}
+    Optional<WalletEntity> findWalletEntityByToken(String token);
+}

@@ -27,12 +27,15 @@ public class WalletServiceImpl implements WalletService {
 
     /**
      * creates a new wallet from a given email
+     * @param email
+     * @return
+     * @throws WalletException
      */
     @Override
     public WalletDTO createWallet(String email) throws WalletException{
         if (walletRepository.findWalletEntityByEmail(email).isPresent()) {
-            logger.debug("Wallet already exists for this email {} ", email);
-            throw new WalletException("Wallet already exists for this email.");
+            logger.debug("wallet creation failed, email already exists {} ", email);
+            throw new WalletException("Wallet already exists for this email " + email);
         }
         WalletEntity wallet = new WalletEntity();
         wallet.setEmail(email);
@@ -40,6 +43,12 @@ public class WalletServiceImpl implements WalletService {
         return WalletDTO.fromWalletEntity(walletRepository.save(wallet));
     }
 
+    /**
+     * retreives a wallet detail by a given token
+     * @param walletToken
+     * @return
+     * @throws WalletException
+     */
     @Override
     public WalletDTO getWalletByToken(String walletToken) throws WalletException {
         Optional<WalletEntity> wallet = walletRepository.findWalletEntityByToken(walletToken);

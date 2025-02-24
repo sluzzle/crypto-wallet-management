@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Represents a wallet entity that groups assets
+ */
 @Entity(name = "wallets")
 @Getter
 @Setter
