@@ -8,6 +8,9 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * Represents an asset entity that holds data related to a crypto coin
+ */
 @Entity(name = "assets")
 @Getter
 @Setter

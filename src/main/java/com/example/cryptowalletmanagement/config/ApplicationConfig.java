@@ -5,12 +5,17 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import java.time.Duration;
 
+/**
+ * Configuration class for setting beans used across the application
+ */
 @Configuration
+@EnableScheduling
 @EnableConfigurationProperties(CoinCapApiProperties.class)
 public class ApplicationConfig {
 
@@ -20,6 +25,10 @@ public class ApplicationConfig {
         this.coinCapApiProperties = coinCapApiProperties;
     }
 
+    /**
+     * builds a resttemplate with default properties
+     * @return
+     */
     @Bean
     public RestTemplate coinCapRestTemplate() {
         DefaultUriBuilderFactory factory = new DefaultUriBuilderFactory(coinCapApiProperties.getBaseUrl());

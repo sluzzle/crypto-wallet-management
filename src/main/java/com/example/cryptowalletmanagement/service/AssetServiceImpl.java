@@ -9,6 +9,8 @@ import com.example.cryptowalletmanagement.repository.entities.WalletEntity;
 import com.example.cryptowalletmanagement.repository.interfaces.AssetRepository;
 import com.example.cryptowalletmanagement.repository.interfaces.WalletRepository;
 import com.example.cryptowalletmanagement.service.coincap.CoinCapApiClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,6 +23,7 @@ import java.util.Optional;
 @Service
 public class AssetServiceImpl implements AssetService{
 
+    private static final Logger logger = LoggerFactory.getLogger(AssetServiceImpl.class);
     private final AssetRepository assetRepository;
     private final WalletRepository walletRepository;
     private final CoinCapApiClient coinCapApiClient;
@@ -38,7 +41,8 @@ public class AssetServiceImpl implements AssetService{
      * @param symbol (BTC, ETH...)
      * @param quantity
      * @return An AssetDTO
-     * @throws WalletException*/
+     * @throws WalletException
+     */
     @Override
     public AssetDTO saveAsset(String walletToken, String symbol, BigDecimal quantity) {
         WalletEntity wallet = walletRepository.findWalletEntityByToken(walletToken)
@@ -46,6 +50,7 @@ public class AssetServiceImpl implements AssetService{
         BigDecimal assetPrice;
         try {
             assetPrice = coinCapApiClient.fetchAssetPrice(symbol);
+            logger.debug("Fetched price for asset: {} is {}", symbol, assetPrice);
             if (assetPrice == null) {
                 throw new AssetException("Invalid price for asset : " + symbol);
             }

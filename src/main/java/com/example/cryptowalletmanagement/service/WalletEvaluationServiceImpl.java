@@ -1,10 +1,14 @@
 package com.example.cryptowalletmanagement.service;
 
+import com.example.cryptowalletmanagement.dto.AssetPerformance;
 import com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationInputDTO;
 import com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationOutputDTO;
 import com.example.cryptowalletmanagement.exception.CoinCapApiException;
 import com.example.cryptowalletmanagement.exception.WalletPerformanceException;
 import com.example.cryptowalletmanagement.service.coincap.CoinCapApiClient;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -22,6 +26,7 @@ import static com.example.cryptowalletmanagement.dto.wallet.WalletEvaluationInpu
 @Service
 public class WalletEvaluationServiceImpl implements WalletEvaluationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(WalletEvaluationServiceImpl.class);
     private final CoinCapApiClient coinCapApiClient;
     private final MathContext precision;
 
@@ -41,14 +46,12 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
     @Override
     public WalletEvaluationOutputDTO evaluateWallet(WalletEvaluationInputDTO walletEvaluationInput, LocalDate date) {
         BigDecimal totalValue = this.calculateTotal(walletEvaluationInput, date);
-
-        record AssetPerformance(String symbol, double performance) {
-        }
-
+        logger.debug("Starting wallet evaluation for date: {} with input assets: {}", date, walletEvaluationInput.assets());
         List<AssetPerformance> performances = walletEvaluationInput.assets().stream()
                 .map(asset -> {
                     BigDecimal pastPrice = this.getCurrentPrice(asset.symbol(), date);
                     double performance = calculatePerformance(asset, pastPrice).doubleValue();
+                    logger.debug("Asset performance calculated: asset={}, performance={}", asset.symbol(), performance);
                     return new AssetPerformance(asset.symbol(), performance);
                 }).toList();
 
@@ -58,7 +61,6 @@ public class WalletEvaluationServiceImpl implements WalletEvaluationService {
         AssetPerformance worstAsset = performances.stream()
                 .min(Comparator.comparingDouble(AssetPerformance::performance))
                 .orElse(new AssetPerformance("", 0));
-
         return new WalletEvaluationOutputDTO(totalValue, bestAsset.symbol(), bestAsset.performance(), worstAsset.symbol(), worstAsset.performance());
     }
 

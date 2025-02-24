@@ -20,6 +20,9 @@ public class TaskScheduler {
         this.schedulingTask = schedulingTask;
     }
 
+    /**
+     * schedules a task to execute periodically
+     */
     @Scheduled(fixedDelayString = "${scheduler.price.update.interval}", initialDelay = 5000)
     @Transactional
     public void schedule() {

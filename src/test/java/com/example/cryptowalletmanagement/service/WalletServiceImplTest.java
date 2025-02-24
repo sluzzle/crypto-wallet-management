@@ -53,7 +53,7 @@ class WalletServiceImplTest {
         when(walletRepository.findWalletEntityByEmail(existingWallet.email())).thenReturn(Optional.of(WalletDTO.toWalletEntity(existingWallet)));
 
         WalletException exception = assertThrows(WalletException.class, () -> walletService.createWallet(existingWallet.email()));
-        assertEquals("Wallet already exists for this email.", exception.getMessage());
+        assertEquals("Wallet already exists for this email test@test.com", exception.getMessage());
         verify(walletRepository, times(1)).findWalletEntityByEmail(existingWallet.email());
     }
 
