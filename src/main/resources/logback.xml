@@ -9,7 +9,7 @@
         <appender-ref ref="CONSOLE" />
     </root>
 
-    <logger name="com.example.cryptowalletmanagement" level="ERROR" />
+    <logger name="com.example.cryptowalletmanagement" level="INFO" />
     <logger name="org.springframework" level="INFO" />
 
 </configuration>
