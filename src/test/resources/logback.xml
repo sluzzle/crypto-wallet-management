@@ -10,5 +10,6 @@
     </root>
 
     <logger name="com.example.cryptowalletmanagement" level="ERROR" />
+    <logger name="org.springframework" level="DEBUG" />
 
 </configuration>
