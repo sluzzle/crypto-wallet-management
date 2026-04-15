@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -55,14 +56,16 @@ public class AssetServiceImpl implements AssetService{
                 throw new AssetException("Invalid price for asset : " + symbol);
             }
         } catch (CoinCapApiException e) {
-            throw new AssetException("Unable to fetch price for asset : " + symbol);
+            logger.error("Unable to fetch price for asset {} from CoinCap API", symbol, e);
+            throw new AssetException("Unable to fetch price for asset : " + symbol + ". Cause: " + e.getMessage());
         }
 
         Optional<AssetEntity> existingAsset = assetRepository.findBySymbolAndWalletToken(symbol, wallet.getToken());
 
         if (existingAsset.isPresent()) {
-            existingAsset.get().setQuantity(existingAsset.get().getQuantity().add(quantity));
-            return AssetDTO.fromAssetEntity(assetRepository.save(existingAsset.get()));
+            AssetEntity assetEntity = Objects.requireNonNull(existingAsset.get(), "Existing asset must not be null");
+            assetEntity.setQuantity(assetEntity.getQuantity().add(quantity));
+            return AssetDTO.fromAssetEntity(assetRepository.save(assetEntity));
         } else {
             AssetEntity asset = new AssetEntity();
             asset.setWallet(wallet);

@@ -7,21 +7,26 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Global exception handler for controllers in the application
  */
 @RestControllerAdvice
 public class ControllerExceptionHandler {
+    private static final Logger logger = LoggerFactory.getLogger(ControllerExceptionHandler.class);
 
     /**
      * Handles generic Exceptions (checked exceptions).
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleException(Exception e) {
+        logger.error("Unhandled exception in request processing", e);
         return makeErrorResponse("An internal error occurred", null, HttpStatus.BAD_REQUEST);
     }
     /**
@@ -89,6 +94,6 @@ public class ControllerExceptionHandler {
                 "message", message,
                 "timestamp", System.currentTimeMillis()
         );
-        return new ResponseEntity<>(body, status);
+        return new ResponseEntity<>(body, Objects.requireNonNull(status, "HTTP status must not be null"));
     }
 }

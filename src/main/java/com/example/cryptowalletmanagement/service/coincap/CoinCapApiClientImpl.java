@@ -12,11 +12,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Objects;
 
 /**
  * Interface for interacting with CoinCapAPI
@@ -74,7 +76,8 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
      */
     private BigDecimal fetchAssetPrice(String symbol, String url) {
         try {
-            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
+            String requestUrl = Objects.requireNonNull(url, "CoinCap request URL must not be null");
+            ResponseEntity<String> response = restTemplate.getForEntity(requestUrl, String.class);
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new CoinCapApiException("unexpected api response for asset: " + symbol);
             }
@@ -87,6 +90,8 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
             }
         } catch (HttpClientErrorException | HttpServerErrorException e) {
             throw new CoinCapApiException("unexpected api response for asset: " + symbol, e);
+        } catch (RestClientException e) {
+            throw new CoinCapApiException("unable to call CoinCap API for asset: " + symbol, e);
         }
     }
 
@@ -97,15 +102,22 @@ public class CoinCapApiClientImpl implements CoinCapApiClient {
      * @throws CoinCapApiException
      */
     private String fetchAssetId(String symbol) throws CoinCapApiException {
-        ResponseEntity<String> response = restTemplate.getForEntity(String.format(coinCapApiProperties.getSearchQuery(), symbol), String.class);
-        if (!response.getStatusCode().is2xxSuccessful()) {
-            throw new CoinCapApiException("unable to fetch price from coincap for : " + symbol);
+        try {
+            String symbolValue = Objects.requireNonNull(symbol, "Asset symbol must not be null");
+            String searchQueryTemplate = Objects.requireNonNull(coinCapApiProperties.getSearchQuery(), "CoinCap search query must not be null");
+            String requestUrl = Objects.requireNonNull(String.format(searchQueryTemplate, symbolValue), "CoinCap search URL must not be null");
+            ResponseEntity<String> response = restTemplate.getForEntity(requestUrl, String.class);
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new CoinCapApiException("unable to fetch price from CoinCap for: " + symbol);
+            }
+            JsonNode idNode = parseJsonResponse(response);
+            if (idNode == null || idNode.isEmpty()) {
+                throw new CoinCapApiException("unable to find coin id for: " + symbol);
+            }
+            return idNode.get("id").asText();
+        } catch (RestClientException e) {
+            throw new CoinCapApiException("unable to call CoinCap API for asset: " + symbol, e);
         }
-        JsonNode idNode = parseJsonResponse(response);
-        if (idNode == null || idNode.isEmpty()) {
-            throw new CoinCapApiException("unable to find coin id for: " + symbol);
-        }
-        return idNode.get("id").asText();
     }
 
     /**
